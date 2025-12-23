@@ -498,6 +498,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Format the schedule using the new helper function
     const formattedSchedule = formatSchedule(details);
+    
+    // Escape HTML special characters for data attributes
+    const escapeHtml = (str) => str.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const escapedSchedule = escapeHtml(formattedSchedule);
+    const escapedDescription = escapeHtml(details.description);
 
     // Create activity tag
     const tagHtml = `
@@ -554,13 +559,13 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
       <div class="share-buttons">
         <span class="share-label">Share:</span>
-        <button class="share-button twitter" data-activity="${name}" data-description="${details.description}" data-schedule="${formattedSchedule.replace(/"/g, '&quot;')}" title="Share on Twitter">
+        <button class="share-button twitter" data-activity="${name}" data-description="${escapedDescription}" data-schedule="${escapedSchedule}" title="Share on Twitter">
           <span class="share-icon">🐦</span>
         </button>
-        <button class="share-button facebook" data-activity="${name}" data-description="${details.description}" data-schedule="${formattedSchedule.replace(/"/g, '&quot;')}" title="Share on Facebook">
+        <button class="share-button facebook" data-activity="${name}" data-description="${escapedDescription}" data-schedule="${escapedSchedule}" title="Share on Facebook">
           <span class="share-icon">📘</span>
         </button>
-        <button class="share-button email" data-activity="${name}" data-description="${details.description}" data-schedule="${formattedSchedule.replace(/"/g, '&quot;')}" title="Share via Email">
+        <button class="share-button email" data-activity="${name}" data-description="${escapedDescription}" data-schedule="${escapedSchedule}" title="Share via Email">
           <span class="share-icon">✉️</span>
         </button>
       </div>
@@ -615,18 +620,36 @@ document.addEventListener("DOMContentLoaded", () => {
     const description = button.dataset.description;
     const schedule = button.dataset.schedule;
     
+    // Truncate description if too long for sharing (max 200 chars)
+    const truncatedDescription = description.length > 200 
+      ? description.substring(0, 197) + '...' 
+      : description;
+    
     // Construct the share text
-    const shareText = `Check out this activity at Mergington High School: ${activityName} - ${description}. Schedule: ${schedule}`;
+    const shareText = `Check out this activity at Mergington High School: ${activityName} - ${truncatedDescription}. Schedule: ${schedule}`;
     const shareUrl = window.location.href;
+    
+    // Constants for popup dimensions
+    const POPUP_WIDTH = 550;
+    const POPUP_HEIGHT = 420;
+    const popupOptions = `width=${POPUP_WIDTH},height=${POPUP_HEIGHT}`;
+    
+    // Helper function to safely open URL
+    const safeOpen = (url) => {
+      // Ensure URL starts with https:// or mailto:
+      if (url.startsWith('https://') || url.startsWith('mailto:')) {
+        window.open(url, "_blank", popupOptions);
+      }
+    };
     
     if (button.classList.contains("twitter")) {
       // Twitter share
       const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
-      window.open(twitterUrl, "_blank", "width=550,height=420");
+      safeOpen(twitterUrl);
     } else if (button.classList.contains("facebook")) {
       // Facebook share
       const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
-      window.open(facebookUrl, "_blank", "width=550,height=420");
+      safeOpen(facebookUrl);
     } else if (button.classList.contains("email")) {
       // Email share
       const subject = `Activity at Mergington High School: ${activityName}`;
